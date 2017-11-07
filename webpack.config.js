@@ -1,12 +1,13 @@
 const webpack = require('webpack');
-const chalk = require('chalk');
-const path = require('path');
 const htmlWebpackPlugin = require('html-webpack-plugin');
 const extractTextPlugin = require('extract-text-webpack-plugin');
 const copyWebpackPlugin = require('copy-webpack-plugin');
+const chalk = require('chalk');
+const path = require('path');
 const autoprefixer = require('autoprefixer');
 
-console.log(` *** Webpack is running in ${chalk.green(process.env.NODE_ENV)} environment`);
+const env = process.env.NODE_ENV;
+console.log(` *** Webpack is running in ${chalk.green(env)} environment`);
 
 let imageLoaders = [
     {
@@ -18,7 +19,7 @@ let imageLoaders = [
     }
 ];
 
-if (process.env.NODE_ENV === 'production') {
+if (env === 'production') {
     imageLoaders.push({
         loader: 'image-webpack-loader',
         options: {
@@ -39,10 +40,9 @@ const config = {
     entry: {
         bundle: './app/index.js'
     },
-
     output: {
         path: path.resolve(__dirname, 'build'),
-        filename: 'js/[name].[chunkhash].js'
+        filename: 'js/[name].[chunkhash].js',
     },
 
     /** Enable source maps. **/
@@ -50,7 +50,8 @@ const config = {
 
     /** Specify devServer directory. **/
     devServer: {
-        contentBase: './build'
+        contentBase: path.join(__dirname, 'build'),
+        compress: true
     },
 
     module: {
@@ -72,32 +73,34 @@ const config = {
             {
                 test: /\.(sass|scss)$/,
                 use: extractStyles.extract({
+                    fallback: 'style-loader',
+                    publicPath: '../',
                     use: [
                         {
                             loader: 'css-loader',
                             options: {
-                                sourceMap: true
+                                sourceMap: true,
                             }
                         },
                         {
                             loader: 'postcss-loader',
                             options: {
+                                ident: 'postcss',
                                 plugins: [
                                     autoprefixer({
                                         browsers: ['ie >= 8', 'last 4 version']
                                     })
                                 ],
-                                sourceMap: true
+                                sourceMap: true,
                             }
                         },
                         {
                             loader: 'sass-loader',
                             options: {
-                                sourceMap: true
+                                sourceMap: true,
                             }
                         }
-                    ],
-                    fallback: 'style-loader'
+                    ]
                 })
             },
 
@@ -111,10 +114,39 @@ const config = {
             {
                 test: /\.(png|jpe?g|gif|ico|svg)$/,
                 use: imageLoaders
+            },
+
+            /** Handle fonts files **/
+            {
+                test: /\.(ttf|eot|woff|woff2)$/,
+                loader: 'file-loader',
+                options: {
+                    name: 'fonts/[name].[ext]'
+                }
             }
         ]
     },
+
+    resolve: {
+        /** Directories where to look for modules. **/
+        modules: [
+            'node_modules',
+            path.resolve(__dirname, 'html')
+        ]
+
+        /** A list of module name aliases. **/
+        /*alias: {
+            'moduleAliasName': path.resolve(__dirname, 'path/to/module')
+        }*/
+    },
+
     plugins: [
+        /** Map symbols to packages. **/
+        new webpack.ProvidePlugin({
+            $: 'jquery/dist/jquery.min',
+            jQuery: 'jquery/dist/jquery.min'
+        }),
+
         /** Define window scope variable NODE_ENV. And assign corresponding value to it. **/
         new webpack.DefinePlugin({
             'process.env': {
@@ -126,8 +158,10 @@ const config = {
 
         extractStyles,
 
-        /** Copy icons files to the build directory **/
-        new copyWebpackPlugin([{ from: path.resolve(__dirname, 'app', 'img', 'icons'), to: 'img/icons' }])
+        /** Copy assets files to the build directory **/
+        new copyWebpackPlugin([
+            { from: path.resolve(__dirname, 'app', 'img', 'icons'), to: 'img/icons' },
+        ])
     ]
 };
 
