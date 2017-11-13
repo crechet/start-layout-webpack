@@ -107,22 +107,28 @@ const config = {
             /** Handle html files **/
             {
                 test: /\.html$/,
-                use: 'html-loader'
+                loader: 'html-loader'
             },
 
             /** Handle image files **/
             {
                 test: /\.(png|jpe?g|gif|ico|svg)$/,
-                use: imageLoaders
+                use: imageLoaders,
+                include: [
+                    path.resolve(__dirname, 'app', 'img')
+                ]
             },
 
             /** Handle fonts files **/
             {
-                test: /\.(ttf|eot|woff|woff2)$/,
+                test: /\.(ttf|eot|woff|woff2|svg)$/,
                 loader: 'file-loader',
                 options: {
                     name: 'fonts/[name].[ext]'
-                }
+                },
+                include: [
+                    path.resolve(__dirname, 'app', 'fonts')
+                ]
             }
         ]
     },
@@ -144,7 +150,11 @@ const config = {
         /** Map symbols to packages. **/
         new webpack.ProvidePlugin({
             $: 'jquery/dist/jquery.min',
-            jQuery: 'jquery/dist/jquery.min'
+            jQuery: 'jquery/dist/jquery.min',
+            jquery: 'jquery/dist/jquery.min',
+            'window.jQuery': 'jquery/dist/jquery.min',
+            'window.jquery': 'jquery/dist/jquery.min',
+            'window.$': 'jquery/dist/jquery.min'
         }),
 
         /** Define window scope variable NODE_ENV. And assign corresponding value to it. **/
